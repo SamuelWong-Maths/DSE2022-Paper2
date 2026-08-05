@@ -333,7 +333,7 @@
 
             { id: 17, classification: "", text: "In the figure, $M$ and $N$ are points lying on $PQ$ and $QR$ respectively such that $PM:MQ=5:6$ and $QN:NR=3:4$. If the area of the quadrilateral $MNRP$ is $59\\text{ cm}^2$, then the area of $\\triangle MNQ$ is", hasFigure: true, isTikz: true, figure: `<svg viewBox="0 0 360 250" class="w-full max-h-[300px]" xmlns="http://www.w3.org/2000/svg"><g stroke="#1e293b" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="65,45 150,205 310,205"/><line x1="112" y1="133" x2="219" y2="205"/></g><g font-family="sans-serif" font-size="16" font-weight="bold" fill="#1e293b"><text x="46" y="42">P</text><text x="142" y="225">Q</text><text x="314" y="225">R</text><text x="90" y="140">M</text><text x="216" y="225">N</text></g></svg>`, options: ["$17\\text{ cm}^2$", "$18\\text{ cm}^2$", "$19\\text{ cm}^2$", "$20\\text{ cm}^2$"], answer: 1, solution: "In $\\triangle PQR$, <br> $$ \\begin{aligned} \\dfrac{QM}{QP} &= \\dfrac{6}{11}\\\\ \\dfrac{QN}{QR} &= \\dfrac{3}{7} \\end{aligned} $$ <br> Hence, <br> $$ \\begin{aligned} \\dfrac{\\text{Area of }\\triangle MNQ}{\\text{Area of }\\triangle PQR} &= \\dfrac{QM}{QP}\\cdot\\dfrac{QN}{QR}\\\\ &= \\dfrac{6}{11}\\cdot\\dfrac{3}{7}\\\\ &= \\dfrac{18}{77} \\end{aligned} $$ <br> Therefore, <br> $$ \\begin{aligned} \\dfrac{\\text{Area of quadrilateral }MNRP}{\\text{Area of }\\triangle PQR} &= 1-\\dfrac{18}{77}\\\\ &= \\dfrac{59}{77} \\end{aligned} $$ <br> Since the area of quadrilateral $MNRP$ is $59\\text{ cm}^2$, the area of $\\triangle PQR$ is $77\\text{ cm}^2$. <br> $$ \\begin{aligned} \\text{Area of }\\triangle MNQ &= \\dfrac{18}{77}\\times77\\\\ &= 18\\text{ cm}^2 \\end{aligned} $$ <br> Hence, the answer is B." },
 
-            { id: 18, classification: "", text: "In the figure, the perimeter of the rectangle $ABCD$ is $170\\text{ cm}$. It is given that $EBF$ is a straight line and $\\angle AEB=\\angle BFC=90^\\circ$. If $AE=24\\text{ cm}$ and $BC=34\\text{ cm}$, then $EF=$", hasFigure: true, isTikz: true, figure: `<svg viewBox="4.7 0.3 10.8 9.8" class="w-full max-h-[300px]" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+            { id: 18, classification: "", text: "In the figure, the perimeter of the rectangle $ABCD$ is $170\\text{ cm}$. It is given that $EBF$ is a straight line and $\\angle AEB=\\angle BFC=90^\\circ$. If $AE=24\\text{ cm}$ and $BC=34\\text{ cm}$, then $EF=$", hasFigure: true, isTikz: true, figure: `<svg viewBox="4.7 2.6 10.8 9.8" class="w-full max-h-[300px]" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
   <g stroke="#1e293b" stroke-width="0.12" fill="none" stroke-linecap="round" stroke-linejoin="round">
     <!-- solid edges -->
     <line x1="12" y1="8" x2="14.0032" y2="4.2985"/>
@@ -629,6 +629,7 @@
         let timePerQuestion = Array(45).fill(0); 
         let overallSeconds = 0;
         let qTimerInterval = null;
+        let overallTimerInterval = null;
 
         // Drawing state elements
         const canvas = document.getElementById('drawing-canvas');
@@ -646,7 +647,7 @@
         const HOLD_THRESHOLD = 500; 
 
         // Initialize timers
-        setInterval(() => {
+        overallTimerInterval = setInterval(() => {
             overallSeconds++;
             const hours = String(Math.floor(overallSeconds / 3600)).padStart(2, '0');
             const minutes = String(Math.floor((overallSeconds % 3600) / 60)).padStart(2, '0');
@@ -654,13 +655,28 @@
             document.getElementById('overall-timer').innerText = `${hours}:${minutes}:${seconds}`;
         }, 1000);
 
+        function updateQuestionTimerDisplay() {
+            const minutes = String(Math.floor(timePerQuestion[currentIdx] / 60)).padStart(2, '0');
+            const seconds = String(timePerQuestion[currentIdx] % 60).padStart(2, '0');
+            document.getElementById('question-timer').innerText = `${minutes}:${seconds}`;
+        }
+
         function startQuestionTimer() {
+            if (isReviewed) return;
+
             if (qTimerInterval) clearInterval(qTimerInterval);
+
+            updateQuestionTimerDisplay();
+
             qTimerInterval = setInterval(() => {
+                if (isReviewed) {
+                    clearInterval(qTimerInterval);
+                    qTimerInterval = null;
+                    return;
+                }
+
                 timePerQuestion[currentIdx]++;
-                const minutes = String(Math.floor(timePerQuestion[currentIdx] / 60)).padStart(2, '0');
-                const seconds = String(timePerQuestion[currentIdx] % 60).padStart(2, '0');
-                document.getElementById('question-timer').innerText = `${minutes}:${seconds}`;
+                updateQuestionTimerDisplay();
             }, 1000);
         }
 
@@ -904,7 +920,11 @@ if (q.hasFigure) {
                 redrawStoredCanvas();
             }, 50);
 
-            startQuestionTimer();
+            updateQuestionTimerDisplay();
+
+            if (!isReviewed) {
+                startQuestionTimer();
+            }
         }
 
         function selectOption(oIdx) {
@@ -930,8 +950,14 @@ if (q.hasFigure) {
                 alert("You have done the whole paper!");
             }
             
-            clearInterval(qTimerInterval);
             isReviewed = true;
+
+            clearInterval(qTimerInterval);
+            clearInterval(overallTimerInterval);
+
+            qTimerInterval = null;
+            overallTimerInterval = null;
+
             gradeTest();
         }
 
